@@ -4,6 +4,7 @@ import { Input } from "@/components/ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Label } from "@/components/ui/label"
 import { Slider } from "@/components/ui/slider"
+import { Image, Upload, Palette } from "lucide-react"
 
 interface WallpaperCustomizerProps {
   settings: WallpaperSettings
@@ -12,47 +13,50 @@ interface WallpaperCustomizerProps {
 
 export function WallpaperCustomizer({ settings, onUpdateSettings }: WallpaperCustomizerProps) {
   return (
-    <div className="space-y-4 bg-white dark:bg-gray-800 p-4 rounded-xl border-4 border-black dark:border-white">
+    <div className="space-y-5">
       <div>
-        <Label htmlFor="backgroundType" className="block text-sm font-medium text-black dark:text-white">
+        <Label htmlFor="backgroundType" className="flex items-center text-sm font-medium mb-2">
+          <Palette className="w-4 h-4 mr-2" />
           Background Type
         </Label>
         <Select
           value={settings.backgroundType}
           onValueChange={(value: "image" | "gradient" | "upload") => onUpdateSettings({ backgroundType: value })}
         >
-          <SelectTrigger
-            id="backgroundType"
-            className="w-full mt-1 border-4 border-black dark:border-white dark:text-white"
-          >
+          <SelectTrigger id="backgroundType" className="w-full border-2">
             <SelectValue placeholder="Select background type" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="image">Image URL</SelectItem>
-            <SelectItem value="upload">Upload Image</SelectItem>
-            <SelectItem value="gradient">Gradient</SelectItem>
+            <SelectItem value="gradient">🎨 Gradient</SelectItem>
+            <SelectItem value="image">🔗 Image URL</SelectItem>
+            <SelectItem value="upload">📤 Upload Image</SelectItem>
           </SelectContent>
         </Select>
       </div>
+
       {settings.backgroundType === "image" && (
         <div>
-          <Label htmlFor="backgroundImage" className="block text-sm font-medium text-black dark:text-white">
-            Background Image URL
+          <Label htmlFor="backgroundImage" className="flex items-center text-sm font-medium mb-2">
+            <Image className="w-4 h-4 mr-2" />
+            Image URL
           </Label>
           <Input
             type="text"
             id="backgroundImage"
             value={settings.backgroundImage}
             onChange={(e) => onUpdateSettings({ backgroundImage: e.target.value })}
-            placeholder="Enter image URL"
-            className="mt-1 border-4 border-black dark:border-white dark:text-white dark:placeholder-gray-400"
+            placeholder="https://example.com/image.jpg"
+            className="border-2 focus:border-purple-500"
           />
+          <p className="text-xs text-gray-500 mt-1">Try Unsplash for free images!</p>
         </div>
       )}
+
       {settings.backgroundType === "upload" && (
         <div>
-          <Label htmlFor="backgroundUpload" className="block text-sm font-medium text-black dark:text-white">
-            Upload Background Image
+          <Label htmlFor="backgroundUpload" className="flex items-center text-sm font-medium mb-2">
+            <Upload className="w-4 h-4 mr-2" />
+            Upload Image
           </Label>
           <Input
             type="file"
@@ -68,38 +72,44 @@ export function WallpaperCustomizer({ settings, onUpdateSettings }: WallpaperCus
                 reader.readAsDataURL(file)
               }
             }}
-            className="mt-1 border-4 border-black dark:border-white dark:text-white"
+            className="border-2 cursor-pointer"
           />
+          <p className="text-xs text-gray-500 mt-1">Upload your own background image</p>
         </div>
       )}
+
       <div>
-        <Label htmlFor="theme" className="block text-sm font-medium text-black dark:text-white">
-          Theme
+        <Label htmlFor="theme" className="block text-sm font-medium mb-2">
+          Color Theme
         </Label>
         <Select value={settings.theme} onValueChange={(value: "light" | "dark") => onUpdateSettings({ theme: value })}>
-          <SelectTrigger id="theme" className="w-full mt-1 border-4 border-black dark:border-white dark:text-white">
+          <SelectTrigger id="theme" className="w-full border-2">
             <SelectValue placeholder="Select theme" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="light">Light</SelectItem>
-            <SelectItem value="dark">Dark</SelectItem>
+            <SelectItem value="light">☀️ Light Theme</SelectItem>
+            <SelectItem value="dark">🌙 Dark Theme</SelectItem>
           </SelectContent>
         </Select>
       </div>
+
       <div>
-        <Label htmlFor="widgetTransparency" className="block text-sm font-medium text-black dark:text-white">
-          Widget Transparency
+        <Label htmlFor="widgetTransparency" className="block text-sm font-medium mb-2">
+          Widget Transparency: {settings.widgetTransparency}%
         </Label>
         <Slider
           id="widgetTransparency"
           min={0}
           max={100}
-          step={1}
+          step={5}
           value={[settings.widgetTransparency]}
           onValueChange={([value]) => onUpdateSettings({ widgetTransparency: value })}
           className="mt-2"
         />
-        <div className="text-sm text-gray-500 dark:text-gray-400 mt-1">{settings.widgetTransparency}%</div>
+        <div className="flex justify-between text-xs text-gray-500 mt-1">
+          <span>Opaque</span>
+          <span>Transparent</span>
+        </div>
       </div>
     </div>
   )

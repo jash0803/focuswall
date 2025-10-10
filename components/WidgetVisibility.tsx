@@ -1,81 +1,46 @@
 import { Switch } from "@/components/ui/switch"
 import type { WallpaperSettings } from "../types"
 import { Label } from "@/components/ui/label"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Calendar, Cloud, FileText, CheckSquare, Quote, Clock } from "lucide-react"
 
 interface WidgetVisibilityProps {
   settings: WallpaperSettings
   onUpdateSettings: (settings: Partial<WallpaperSettings>) => void
 }
 
+const widgets = [
+  { key: "showTasks", label: "Tasks", icon: CheckSquare },
+  { key: "showCalendar", label: "Calendar", icon: Calendar },
+  { key: "showNotes", label: "Notes", icon: FileText },
+  { key: "showCountdown", label: "Countdown", icon: Clock },
+  { key: "showQuote", label: "Daily Quote", icon: Quote },
+]
+
 export function WidgetVisibility({ settings, onUpdateSettings }: WidgetVisibilityProps) {
   return (
-    <Card className="bg-white dark:bg-gray-800 p-4 rounded-xl border-4 border-black dark:border-white">
-      <CardHeader>
-        <CardTitle className="text-lg font-semibold text-black dark:text-white">Widget Visibility</CardTitle>
-      </CardHeader>
-      <CardContent className="space-y-4">
-        <div className="flex items-center justify-between">
-          <Label htmlFor="showCalendar" className="text-black dark:text-white">
-            Show Calendar
-          </Label>
-          <Switch
-            id="showCalendar"
-            checked={settings.showCalendar}
-            onCheckedChange={(checked) => onUpdateSettings({ showCalendar: checked })}
-          />
-        </div>
-        <div className="flex items-center justify-between">
-          <Label htmlFor="showWeather" className="text-black dark:text-white">
-            Show Weather
-          </Label>
-          <Switch
-            id="showWeather"
-            checked={settings.showWeather}
-            onCheckedChange={(checked) => onUpdateSettings({ showWeather: checked })}
-          />
-        </div>
-        <div className="flex items-center justify-between">
-          <Label htmlFor="showNotes" className="text-black dark:text-white">
-            Show Notes
-          </Label>
-          <Switch
-            id="showNotes"
-            checked={settings.showNotes}
-            onCheckedChange={(checked) => onUpdateSettings({ showNotes: checked })}
-          />
-        </div>
-        <div className="flex items-center justify-between">
-          <Label htmlFor="showTasks" className="text-black dark:text-white">
-            Show Tasks
-          </Label>
-          <Switch
-            id="showTasks"
-            checked={settings.showTasks}
-            onCheckedChange={(checked) => onUpdateSettings({ showTasks: checked })}
-          />
-        </div>
-        <div className="flex items-center justify-between">
-          <Label htmlFor="showQuote" className="text-black dark:text-white">
-            Show Quote
-          </Label>
-          <Switch
-            id="showQuote"
-            checked={settings.showQuote}
-            onCheckedChange={(checked) => onUpdateSettings({ showQuote: checked })}
-          />
-        </div>
-        <div className="flex items-center justify-between">
-          <Label htmlFor="showCountdown" className="text-black dark:text-white">
-            Show Countdown
-          </Label>
-          <Switch
-            id="showCountdown"
-            checked={settings.showCountdown}
-            onCheckedChange={(checked) => onUpdateSettings({ showCountdown: checked })}
-          />
-        </div>
-      </CardContent>
-    </Card>
+    <div className="space-y-4">
+      <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
+        Toggle which widgets appear on your wallpaper
+      </p>
+      {widgets.map((widget) => {
+        const Icon = widget.icon
+        return (
+          <div
+            key={widget.key}
+            className="flex items-center justify-between p-3 rounded-lg bg-gray-50 dark:bg-gray-800 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+          >
+            <Label htmlFor={widget.key} className="flex items-center cursor-pointer">
+              <Icon className="w-4 h-4 mr-2 text-purple-500" />
+              {widget.label}
+            </Label>
+            <Switch
+              id={widget.key}
+              checked={settings[widget.key as keyof WallpaperSettings] as boolean}
+              onCheckedChange={(checked) => onUpdateSettings({ [widget.key]: checked })}
+            />
+          </div>
+        )
+      })}
+    </div>
   )
 }

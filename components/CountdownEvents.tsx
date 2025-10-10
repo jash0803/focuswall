@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import type { CountdownEvent } from "../types"
 import { Label } from "@/components/ui/label"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Plus, Trash2, Calendar as CalendarIcon } from "lucide-react"
 
 interface CountdownEventsProps {
   events: CountdownEvent[]
@@ -29,65 +29,95 @@ export function CountdownEvents({ events, onAddEvent, onRemoveEvent }: Countdown
     }
   }
 
+  const calculateDaysLeft = (dateString: string) => {
+    const today = new Date()
+    today.setHours(0, 0, 0, 0)
+    const eventDate = new Date(dateString)
+    eventDate.setHours(0, 0, 0, 0)
+    const timeDiff = eventDate.getTime() - today.getTime()
+    return Math.ceil(timeDiff / (1000 * 3600 * 24))
+  }
+
+  const handleKeyPress = (e: React.KeyboardEvent) => {
+    if (e.key === "Enter") {
+      handleAddEvent()
+    }
+  }
+
   return (
-    <Card className="bg-white dark:bg-gray-800 p-4 rounded-xl border-4 border-black dark:border-white">
-      <CardHeader>
-        <CardTitle className="text-lg font-semibold text-black dark:text-white">Countdown Events</CardTitle>
-      </CardHeader>
-      <CardContent className="space-y-4">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div className="space-y-2">
-            <Label htmlFor="eventTitle" className="text-black dark:text-white">
-              Event Title
-            </Label>
-            <Input
-              id="eventTitle"
-              placeholder="Enter event title"
-              value={newEventTitle}
-              onChange={(e) => setNewEventTitle(e.target.value)}
-              className="border-2 border-black dark:border-white dark:text-white dark:bg-gray-700"
-            />
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="eventDate" className="text-black dark:text-white">
-              Event Date
-            </Label>
-            <Input
-              id="eventDate"
-              type="date"
-              value={newEventDate}
-              onChange={(e) => setNewEventDate(e.target.value)}
-              className="border-2 border-black dark:border-white dark:text-white dark:bg-gray-700"
-            />
-          </div>
+    <div className="space-y-4">
+      <div className="space-y-3">
+        <div>
+          <Label htmlFor="eventTitle" className="flex items-center text-sm font-medium mb-2">
+            <CalendarIcon className="w-4 h-4 mr-2" />
+            Event Title
+          </Label>
+          <Input
+            id="eventTitle"
+            placeholder="e.g., Project Deadline, Birthday..."
+            value={newEventTitle}
+            onChange={(e) => setNewEventTitle(e.target.value)}
+            onKeyPress={handleKeyPress}
+            className="border-2 focus:border-amber-500"
+          />
+        </div>
+        <div>
+          <Label htmlFor="eventDate" className="block text-sm font-medium mb-2">
+            Target Date
+          </Label>
+          <Input
+            id="eventDate"
+            type="date"
+            value={newEventDate}
+            onChange={(e) => setNewEventDate(e.target.value)}
+            onKeyPress={handleKeyPress}
+            className="border-2 focus:border-amber-500"
+          />
         </div>
         <Button
           onClick={handleAddEvent}
-          className="w-full bg-yellow-400 hover:bg-yellow-500 text-black font-bold border-4 border-black dark:border-white dark:text-white dark:hover:text-black"
+          className="w-full bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white"
         >
+          <Plus className="w-4 h-4 mr-2" />
           Add Event
         </Button>
-        <div className="space-y-2">
-          {events.map((event) => (
-            <div
-              key={event.id}
-              className="flex items-center justify-between bg-gray-100 dark:bg-gray-700 p-2 rounded border-2 border-black dark:border-white"
-            >
-              <span className="text-black dark:text-white">
-                {event.title} - {event.date}
-              </span>
-              <Button
-                variant="destructive"
-                size="sm"
-                onClick={() => onRemoveEvent(event.id)}
-                className="border-2 border-black dark:border-white"
+      </div>
+
+      {events.length > 0 && (
+        <div className="space-y-2 max-h-64 overflow-y-auto">
+          <p className="text-xs text-gray-500 dark:text-gray-400">Active Countdowns</p>
+          {events.map((event) => {
+            const daysLeft = calculateDaysLeft(event.date)
+            return (
+              <div
+                key={event.id}
+                className="flex items-center justify-between bg-gradient-to-r from-amber-50 to-orange-50 dark:from-amber-900/20 dark:to-orange-900/20 p-3 rounded-lg border-2 border-amber-200 dark:border-amber-700"
               >
-                Remove
-              </Button>
-            </div>
-          ))}
+                <div className="flex-grow">
+                  <p className="font-medium text-sm text-gray-900 dark:text-white">{event.title}</p>
+                  <p className="text-xs text-gray-600 dark:text-gray-400">
+                    {event.date} • {daysLeft} {daysLeft === 1 ? "day" : "days"} left
+                  </p>
+                </div>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => onRemoveEvent(event.id)}
+                  className="text-red-500 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20"
+                >
+                  <Trash2 className="w-4 h-4" />
+                </Button>
+              </div>
+            )
+          })}
         </div>
-      </CardContent>
-    </Card>
+      )}
+
+      {events.length === 0 && (
+        <div className="text-center py-6 text-gray-500 dark:text-gray-400">
+          <p className="text-sm">No countdown events yet</p>
+        </div>
+      )}
+    </div>
   )
 }

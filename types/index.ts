@@ -8,7 +8,7 @@ export interface Task {
 }
 
 export interface WallpaperSettings {
-  backgroundType: "image" | "gradient"
+  backgroundType: "image" | "gradient" | "upload"
   backgroundImage: string
   theme: "light" | "dark"
   widgetTransparency: number

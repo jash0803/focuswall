@@ -13,16 +13,14 @@ import { ProfilePage } from "./ProfilePage"
 import { WidgetVisibility } from "./WidgetVisibility"
 import { CountdownEvents } from "./CountdownEvents"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { createClientComponentClient } from "@supabase/auth-helpers-nextjs"
-import { Download, LogOut, Moon, Sun, User, Loader2 } from "lucide-react"
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import { useRouter } from "next/navigation"
+import { Download, Moon, Sun, User, Loader2, Layout, Settings, Calendar as CalendarIcon, FileText } from "lucide-react"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 
 export function FocusWall() {
   const { tasks, addTask, removeTask, toggleTask, setTasks } = useTasks()
   const [wallpaperSettings, setWallpaperSettings] = useState<WallpaperSettings>({
     backgroundType: "gradient",
-    backgroundImage: "https://source.unsplash.com/random/1920x1080",
+    backgroundImage: "https://images.unsplash.com/photo-1557683316-973673baf926",
     theme: "light",
     widgetTransparency: 20,
     showCalendar: true,
@@ -41,25 +39,38 @@ export function FocusWall() {
   const [showProfile, setShowProfile] = useState(false)
   const [countdownEvents, setCountdownEvents] = useState<CountdownEvent[]>([])
   const canvasRef = useRef<HTMLCanvasElement>(null)
-  const [user, setUser] = useState<any>(null)
   const [isDownloading, setIsDownloading] = useState(false)
-  const supabase = createClientComponentClient()
-  const router = useRouter()
+  const [activeTab, setActiveTab] = useState("tasks")
 
   useEffect(() => {
-    async function getUserProfile() {
-      try {
-        const {
-          data: { user },
-        } = await supabase.auth.getUser()
-        setUser(user)
-      } catch (error) {
-        console.error("Error fetching user:", error)
-      }
-    }
+    // Load saved data from localStorage
+    const savedTasks = localStorage.getItem("focuswall-tasks")
+    const savedNotes = localStorage.getItem("focuswall-notes")
+    const savedSettings = localStorage.getItem("focuswall-settings")
+    const savedEvents = localStorage.getItem("focuswall-events")
 
-    getUserProfile()
-  }, [supabase.auth])
+    if (savedTasks) setTasks(JSON.parse(savedTasks))
+    if (savedNotes) setNotes(savedNotes)
+    if (savedSettings) setWallpaperSettings(JSON.parse(savedSettings))
+    if (savedEvents) setCountdownEvents(JSON.parse(savedEvents))
+  }, [setTasks])
+
+  useEffect(() => {
+    // Save data to localStorage
+    localStorage.setItem("focuswall-tasks", JSON.stringify(tasks))
+  }, [tasks])
+
+  useEffect(() => {
+    localStorage.setItem("focuswall-notes", notes)
+  }, [notes])
+
+  useEffect(() => {
+    localStorage.setItem("focuswall-settings", JSON.stringify(wallpaperSettings))
+  }, [wallpaperSettings])
+
+  useEffect(() => {
+    localStorage.setItem("focuswall-events", JSON.stringify(countdownEvents))
+  }, [countdownEvents])
 
   const updateWallpaperSettings = useCallback((updates: Partial<WallpaperSettings>) => {
     setWallpaperSettings((prev) => ({ ...prev, ...updates }))
@@ -91,17 +102,40 @@ export function FocusWall() {
       return
     }
 
-    try {
-      const dataUrl = canvas.toDataURL("image/png")
-      const downloadLink = document.createElement("a")
-      downloadLink.href = dataUrl
-      downloadLink.download = "focuswall.png"
-      downloadLink.click()
-    } catch (error) {
-      console.error("Error downloading wallpaper:", error)
-    } finally {
-      setIsDownloading(false)
-    }
+    setTimeout(() => {
+      try {
+        // Create a new canvas for the full-size wallpaper
+        const fullCanvas = document.createElement("canvas")
+        fullCanvas.width = 1920
+        fullCanvas.height = 1080
+        const fullCtx = fullCanvas.getContext("2d")
+        
+        if (!fullCtx) {
+          throw new Error("Could not get canvas context")
+        }
+
+        // Draw the current canvas content to the full-size canvas
+        fullCtx.drawImage(canvas, 0, 0, 1920, 1080)
+
+        // Convert to blob for better quality
+        fullCanvas.toBlob((blob) => {
+          if (blob) {
+            const url = URL.createObjectURL(blob)
+            const downloadLink = document.createElement("a")
+            downloadLink.href = url
+            downloadLink.download = `focuswall-${Date.now()}.png`
+            document.body.appendChild(downloadLink)
+            downloadLink.click()
+            document.body.removeChild(downloadLink)
+            URL.revokeObjectURL(url)
+          }
+          setIsDownloading(false)
+        }, "image/png", 1.0)
+      } catch (error) {
+        console.error("Error downloading wallpaper:", error)
+        setIsDownloading(false)
+      }
+    }, 100) // Small delay to ensure canvas is fully rendered
   }, [])
 
   const toggleTheme = useCallback(() => {
@@ -117,20 +151,23 @@ export function FocusWall() {
     setCountdownEvents((prev) => prev.filter((event) => event.id !== id))
   }, [])
 
-  const handleSignOut = async () => {
-    await supabase.auth.signOut()
-    router.refresh()
-  }
-
   return (
-    <div className="min-h-screen flex flex-col bg-yellow-200">
-      <header className="bg-black text-white p-4">
-        <div className="container mx-auto flex justify-between items-center">
-          <h1 className="text-4xl font-bold">FocusWall</h1>
-          <nav className="flex items-center space-x-4">
+    <div className="min-h-screen flex flex-col bg-gradient-to-br from-indigo-50 via-purple-50 to-pink-50 dark:from-gray-900 dark:via-purple-900 dark:to-indigo-900">
+      <header className="bg-white/80 dark:bg-gray-900/80 backdrop-blur-md border-b border-gray-200 dark:border-gray-700 sticky top-0 z-50 shadow-sm">
+        <div className="container mx-auto px-4 py-4 flex justify-between items-center">
+          <div className="flex items-center space-x-3">
+            <div className="bg-gradient-to-r from-purple-500 to-pink-500 p-2 rounded-lg">
+              <Layout className="w-6 h-6 text-white" />
+            </div>
+            <h1 className="text-3xl font-bold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent">
+              FocusWall
+            </h1>
+          </div>
+          <nav className="flex items-center space-x-3">
             <Button
               variant="outline"
-              className="text-white border-white hover:bg-white hover:text-black"
+              size="sm"
+              className="border-2 hover:bg-purple-50 dark:hover:bg-purple-900/20"
               onClick={() => setShowProfile(!showProfile)}
             >
               <User className="w-4 h-4 mr-2" />
@@ -138,39 +175,17 @@ export function FocusWall() {
             </Button>
             <Button
               variant="outline"
-              className="text-white border-white hover:bg-white hover:text-black"
+              size="sm"
+              className="border-2 hover:bg-purple-50 dark:hover:bg-purple-900/20"
               onClick={toggleTheme}
             >
               {wallpaperSettings.theme === "light" ? <Moon className="w-4 h-4" /> : <Sun className="w-4 h-4" />}
             </Button>
-            <div className="flex items-center space-x-2">
-              {user && (
-                <div className="flex items-center">
-                  <Avatar className="h-8 w-8 border border-white">
-                    <AvatarImage
-                      src={user.user_metadata?.avatar_url || ""}
-                      alt={user.user_metadata?.full_name || user.email}
-                    />
-                    <AvatarFallback>{user.email?.charAt(0).toUpperCase()}</AvatarFallback>
-                  </Avatar>
-                  <span className="ml-2 text-sm hidden md:inline-block">
-                    {user.user_metadata?.full_name || user.email}
-                  </span>
-                </div>
-              )}
-              <Button
-                variant="outline"
-                className="text-white border-white hover:bg-white hover:text-black"
-                onClick={handleSignOut}
-              >
-                <LogOut className="w-4 h-4 mr-2" />
-                Sign Out
-              </Button>
-            </div>
           </nav>
         </div>
       </header>
-      <main className="flex-grow container mx-auto p-4">
+
+      <main className="flex-grow container mx-auto px-4 py-8">
         {showProfile ? (
           <ProfilePage
             tasks={tasks}
@@ -178,71 +193,125 @@ export function FocusWall() {
             onUpdateUserPreferences={updateUserPreferences}
           />
         ) : (
-          <div className="space-y-8">
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-              <Card className="lg:col-span-2">
-                <CardHeader>
-                  <CardTitle>Tasks</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <DragDropContext onDragEnd={() => {}}>
-                    <TaskList
-                      tasks={tasks}
-                      onAddTask={handleAddTask}
-                      onRemoveTask={removeTask}
-                      onToggleTask={toggleTask}
-                      onReorderTasks={handleReorderTasks}
-                    />
-                  </DragDropContext>
-                </CardContent>
-              </Card>
-              <div className="space-y-8">
-                <WallpaperCustomizer settings={wallpaperSettings} onUpdateSettings={updateWallpaperSettings} />
-                <NotesWidget notes={notes} onUpdateNotes={setNotes} />
-                <WidgetVisibility settings={wallpaperSettings} onUpdateSettings={updateWallpaperSettings} />
-                <CountdownEvents
-                  events={countdownEvents}
-                  onAddEvent={handleAddCountdownEvent}
-                  onRemoveEvent={handleRemoveCountdownEvent}
-                />
+          <div className="space-y-6">
+            <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
+              {/* Left Column - Controls */}
+              <div className="xl:col-span-1 space-y-6">
+                <Card className="border-2 border-purple-200 dark:border-purple-700 shadow-lg">
+                  <CardHeader className="bg-gradient-to-r from-purple-500 to-pink-500 text-white rounded-t-lg">
+                    <CardTitle className="flex items-center">
+                      <Settings className="w-5 h-5 mr-2" />
+                      Customization
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="pt-6">
+                    <Tabs value={activeTab} onValueChange={setActiveTab}>
+                      <TabsList className="grid w-full grid-cols-3 mb-4">
+                        <TabsTrigger value="settings" className="text-xs">Settings</TabsTrigger>
+                        <TabsTrigger value="widgets" className="text-xs">Widgets</TabsTrigger>
+                        <TabsTrigger value="events" className="text-xs">Events</TabsTrigger>
+                      </TabsList>
+                      <TabsContent value="settings" className="space-y-4">
+                        <WallpaperCustomizer settings={wallpaperSettings} onUpdateSettings={updateWallpaperSettings} />
+                      </TabsContent>
+                      <TabsContent value="widgets" className="space-y-4">
+                        <WidgetVisibility settings={wallpaperSettings} onUpdateSettings={updateWallpaperSettings} />
+                      </TabsContent>
+                      <TabsContent value="events" className="space-y-4">
+                        <CountdownEvents
+                          events={countdownEvents}
+                          onAddEvent={handleAddCountdownEvent}
+                          onRemoveEvent={handleRemoveCountdownEvent}
+                        />
+                      </TabsContent>
+                    </Tabs>
+                  </CardContent>
+                </Card>
+
+                <Card className="border-2 border-blue-200 dark:border-blue-700 shadow-lg">
+                  <CardHeader className="bg-gradient-to-r from-blue-500 to-cyan-500 text-white rounded-t-lg">
+                    <CardTitle className="flex items-center">
+                      <FileText className="w-5 h-5 mr-2" />
+                      Quick Notes
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="pt-6">
+                    <NotesWidget notes={notes} onUpdateNotes={setNotes} />
+                  </CardContent>
+                </Card>
+              </div>
+
+              {/* Right Column - Tasks and Preview */}
+              <div className="xl:col-span-2 space-y-6">
+                <Card className="border-2 border-green-200 dark:border-green-700 shadow-lg">
+                  <CardHeader className="bg-gradient-to-r from-green-500 to-emerald-500 text-white rounded-t-lg">
+                    <CardTitle className="flex items-center">
+                      <CalendarIcon className="w-5 h-5 mr-2" />
+                      Task Manager
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="pt-6">
+                    <DragDropContext onDragEnd={() => {}}>
+                      <TaskList
+                        tasks={tasks}
+                        onAddTask={handleAddTask}
+                        onRemoveTask={removeTask}
+                        onToggleTask={toggleTask}
+                        onReorderTasks={handleReorderTasks}
+                      />
+                    </DragDropContext>
+                  </CardContent>
+                </Card>
+
+                <Card className="border-2 border-orange-200 dark:border-orange-700 shadow-lg">
+                  <CardHeader className="bg-gradient-to-r from-orange-500 to-red-500 text-white rounded-t-lg">
+                    <CardTitle>Wallpaper Preview</CardTitle>
+                  </CardHeader>
+                  <CardContent className="pt-6">
+                    <div className="bg-gray-100 dark:bg-gray-800 p-4 rounded-lg">
+                      <WallpaperPreview
+                        ref={canvasRef}
+                        settings={wallpaperSettings}
+                        tasks={tasks}
+                        notes={notes}
+                        userPreferences={userPreferences}
+                        countdownEvents={countdownEvents}
+                      />
+                    </div>
+                    <div className="mt-6 flex flex-col sm:flex-row gap-3">
+                      <Button
+                        onClick={generateWallpaper}
+                        disabled={isDownloading}
+                        className="flex-1 bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white font-bold py-6 text-lg shadow-lg"
+                        size="lg"
+                      >
+                        {isDownloading ? (
+                          <>
+                            <Loader2 className="mr-2 h-5 w-5 animate-spin" /> Generating...
+                          </>
+                        ) : (
+                          <>
+                            <Download className="mr-2 h-5 w-5" /> Download Wallpaper (1920x1080)
+                          </>
+                        )}
+                      </Button>
+                    </div>
+                    <p className="text-sm text-gray-500 dark:text-gray-400 mt-3 text-center">
+                      Click the button above to download your customized wallpaper in full HD quality
+                    </p>
+                  </CardContent>
+                </Card>
               </div>
             </div>
-            <Card>
-              <CardHeader>
-                <CardTitle>Wallpaper Preview</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <WallpaperPreview
-                  ref={canvasRef}
-                  settings={wallpaperSettings}
-                  tasks={tasks}
-                  notes={notes}
-                  userPreferences={userPreferences}
-                  countdownEvents={countdownEvents}
-                />
-                <Button
-                  onClick={generateWallpaper}
-                  disabled={isDownloading}
-                  className="mt-4 bg-yellow-400 hover:bg-yellow-500 text-black font-bold border-4 border-black dark:border-white dark:text-white dark:hover:text-black"
-                >
-                  {isDownloading ? (
-                    <>
-                      <Loader2 className="mr-2 h-4 w-4 animate-spin" /> Downloading...
-                    </>
-                  ) : (
-                    <>
-                      <Download className="mr-2 h-4 w-4" /> Download Wallpaper
-                    </>
-                  )}
-                </Button>
-              </CardContent>
-            </Card>
           </div>
         )}
       </main>
-      <footer className="bg-black text-white p-4">
-        <div className="container mx-auto text-center">
-          <p>&copy; 2023 FocusWall. All rights reserved.</p>
+
+      <footer className="bg-white/80 dark:bg-gray-900/80 backdrop-blur-md border-t border-gray-200 dark:border-gray-700 py-6 mt-8">
+        <div className="container mx-auto px-4 text-center">
+          <p className="text-gray-600 dark:text-gray-400">
+            &copy; 2025 FocusWall. Free productivity wallpaper creator for everyone.
+          </p>
         </div>
       </footer>
     </div>

@@ -1,8 +1,9 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Textarea } from "@/components/ui/textarea"
 import { Button } from "@/components/ui/button"
+import { Save, Check } from "lucide-react"
 
 interface NotesWidgetProps {
   notes: string
@@ -11,25 +12,41 @@ interface NotesWidgetProps {
 
 export function NotesWidget({ notes, onUpdateNotes }: NotesWidgetProps) {
   const [editableNotes, setEditableNotes] = useState(notes)
+  const [saved, setSaved] = useState(false)
+
+  useEffect(() => {
+    setEditableNotes(notes)
+  }, [notes])
 
   const handleSave = () => {
     onUpdateNotes(editableNotes)
+    setSaved(true)
+    setTimeout(() => setSaved(false), 2000)
   }
 
   return (
-    <div className="bg-white dark:bg-gray-800 p-4 rounded-xl border-4 border-black dark:border-white">
-      <h3 className="text-lg font-semibold text-black dark:text-white mb-2">Notes</h3>
+    <div className="space-y-3">
       <Textarea
         value={editableNotes}
         onChange={(e) => setEditableNotes(e.target.value)}
-        className="w-full h-32 mb-2 border-2 border-black dark:border-white dark:text-white dark:bg-gray-700"
-        placeholder="Add your notes here..."
+        className="w-full h-32 border-2 focus:border-blue-500 dark:border-gray-600 resize-none"
+        placeholder="Add your quick notes here... They'll appear on your wallpaper!"
       />
       <Button
         onClick={handleSave}
-        className="bg-yellow-400 hover:bg-yellow-500 text-black font-bold border-4 border-black dark:border-white dark:text-white dark:hover:text-black"
+        className="w-full bg-gradient-to-r from-blue-500 to-cyan-500 hover:from-blue-600 hover:to-cyan-600 text-white"
       >
-        Save Notes
+        {saved ? (
+          <>
+            <Check className="w-4 h-4 mr-2" />
+            Saved!
+          </>
+        ) : (
+          <>
+            <Save className="w-4 h-4 mr-2" />
+            Save Notes
+          </>
+        )}
       </Button>
     </div>
   )
